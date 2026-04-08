@@ -10,9 +10,17 @@ npx mcp-dicode
 
 ## Configuration
 
-### Claude Code / Claude Desktop
+### Claude Code (CLI)
 
-Add to your MCP settings:
+Run this command to add the server:
+
+```bash
+claude mcp add mcp-dicode -e TAVILY_API_KEY=your-api-key -- npx -y mcp-dicode
+```
+
+### Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
 ```json
 {
