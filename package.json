@@ -1,0 +1,49 @@
+{
+  "name": "mcp-dicode",
+  "version": "0.1.0",
+  "description": "MCP server providing web search tools for AI assistants",
+  "type": "module",
+  "main": "build/index.js",
+  "bin": {
+    "mcp-dicode": "./build/index.js"
+  },
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "build": "tsc && chmod 755 build/index.js",
+    "dev": "tsx src/index.ts",
+    "start": "node build/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paifas/mcp-dicode.git"
+  },
+  "homepage": "https://github.com/paifas/mcp-dicode#readme",
+  "bugs": {
+    "url": "https://github.com/paifas/mcp-dicode/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "web-search",
+    "tavily",
+    "ai",
+    "claude",
+    "opencode"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}
