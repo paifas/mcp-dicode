@@ -38,15 +38,16 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 
 ### OpenCode
 
-Add to your OpenCode MCP config:
+Add to `~/.config/opencode/opencode.json` (global) or `.opencode.json` in your project root:
 
-```json
+```jsonc
 {
-  "mcpServers": {
+  "mcp": {
     "mcp-dicode": {
-      "command": "npx",
-      "args": ["-y", "mcp-dicode"],
-      "env": {
+      "type": "local",
+      "command": ["npx", "-y", "mcp-dicode"],
+      "enabled": true,
+      "environment": {
         "TAVILY_API_KEY": "your-api-key"
       }
     }
