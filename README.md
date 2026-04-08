@@ -2,17 +2,11 @@
 
 MCP server providing web search tools for AI assistants, powered by [Tavily](https://tavily.com).
 
-## Install
+## Setup
 
-```bash
-npx mcp-dicode
-```
-
-## Configuration
+You need a [Tavily API key](https://tavily.com) (free tier available).
 
 ### Claude Code (CLI)
-
-Run this command to add the server:
 
 ```bash
 claude mcp add mcp-dicode -e TAVILY_API_KEY=your-api-key -- npx -y mcp-dicode
