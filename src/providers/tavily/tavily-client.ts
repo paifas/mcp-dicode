@@ -22,6 +22,27 @@ export interface TavilySearchResponse {
   response_time?: number;
 }
 
+/** Raw Tavily extract API response */
+export interface TavilyExtractResponse {
+  results: {
+    url: string;
+    raw_content: string;
+    images?: string[];
+  }[];
+  failed_results: {
+    url: string;
+    error: string;
+  }[];
+  response_time?: number;
+}
+
+/** Parameters for the Tavily extract request body */
+export interface TavilyExtractParams {
+  urls: string[];
+  extract_depth?: "basic" | "advanced";
+  include_images?: boolean;
+}
+
 /** Parameters for the Tavily search request body */
 export interface TavilySearchParams {
   query: string;
@@ -85,6 +106,56 @@ export class TavilyClient {
       }
 
       return (await response.json()) as TavilySearchResponse;
+    } catch (error) {
+      if (error instanceof TavilyError) throw error;
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new TavilyError("Tavily API request timed out", 408);
+      }
+      throw new TavilyError(
+        `Tavily API request failed: ${error instanceof Error ? error.message : String(error)}`,
+        500,
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async extract(params: TavilyExtractParams): Promise<TavilyExtractResponse> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const response = await fetch(`${this.baseUrl}/extract`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify(params),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const body = await response.text().catch(() => "");
+        if (response.status === 401) {
+          throw new TavilyError(
+            `Invalid Tavily API key. ${body}`,
+            response.status,
+          );
+        }
+        if (response.status === 429) {
+          throw new TavilyError(
+            `Tavily API rate limit exceeded. You may have used your monthly quota. ${body}`,
+            response.status,
+          );
+        }
+        throw new TavilyError(
+          `Tavily API error (${response.status}): ${body}`,
+          response.status,
+        );
+      }
+
+      return (await response.json()) as TavilyExtractResponse;
     } catch (error) {
       if (error instanceof TavilyError) throw error;
       if (error instanceof Error && error.name === "AbortError") {

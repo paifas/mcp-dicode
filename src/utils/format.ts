@@ -1,4 +1,4 @@
-import type { SearchResponse } from "../types.js";
+import type { SearchResponse, ExtractResponse } from "../types.js";
 
 /**
  * Formats a SearchResponse into a markdown string suitable for MCP tool output.
@@ -28,6 +28,37 @@ export function formatSearchResponse(response: SearchResponse): string {
   parts.push("Sources:");
   for (const result of response.results) {
     parts.push(`- [${result.title}](${result.url})`);
+  }
+
+  return parts.join("\n");
+}
+
+/**
+ * Formats an ExtractResponse into a markdown string suitable for MCP tool output.
+ */
+export function formatExtractResponse(response: ExtractResponse): string {
+  const parts: string[] = [];
+
+  for (const result of response.results) {
+    parts.push(`## ${result.url}`);
+    parts.push("");
+    parts.push(result.content);
+    parts.push("");
+  }
+
+  if (response.failedResults.length > 0) {
+    parts.push("---");
+    parts.push("");
+    parts.push("Failed:");
+    for (const failed of response.failedResults) {
+      parts.push(`- ${failed.url}: ${failed.error}`);
+    }
+    parts.push("");
+  }
+
+  if (response.responseTime != null) {
+    parts.push(`*Response time: ${response.responseTime}ms*`);
+    parts.push("");
   }
 
   return parts.join("\n");

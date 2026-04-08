@@ -13,3 +13,17 @@ export interface SearchResponse {
   results: SearchResult[];
   responseTime?: number;
 }
+
+/** Normalized extract result */
+export interface ExtractResult {
+  url: string;
+  content: string;
+  images?: string[];
+}
+
+/** Normalized extract response */
+export interface ExtractResponse {
+  results: ExtractResult[];
+  failedResults: { url: string; error: string }[];
+  responseTime?: number;
+}

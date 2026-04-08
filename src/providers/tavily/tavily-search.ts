@@ -1,5 +1,5 @@
-import type { SearchResponse } from "../../types.js";
-import type { SearchProvider, SearchParams } from "../search-provider.js";
+import type { SearchResponse, ExtractResponse } from "../../types.js";
+import type { SearchProvider, SearchParams, ExtractParams } from "../search-provider.js";
 import { TavilyClient, TavilyError } from "./tavily-client.js";
 
 /**
@@ -35,6 +35,27 @@ export class TavilySearchProvider implements SearchProvider {
         url: r.url,
         snippet: r.content,
         score: r.score,
+      })),
+      responseTime: response.response_time,
+    };
+  }
+
+  async extract(params: ExtractParams): Promise<ExtractResponse> {
+    const response = await this.client.extract({
+      urls: params.urls,
+      extract_depth: params.extractDepth,
+      include_images: params.includeImages,
+    });
+
+    return {
+      results: response.results.map((r) => ({
+        url: r.url,
+        content: r.raw_content,
+        images: r.images,
+      })),
+      failedResults: response.failed_results.map((f) => ({
+        url: f.url,
+        error: f.error,
       })),
       responseTime: response.response_time,
     };
