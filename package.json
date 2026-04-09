@@ -1,6 +1,6 @@
 {
   "name": "mcp-dicode",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "MCP server providing web search tools for AI assistants",
   "type": "module",
   "main": "build/index.js",
