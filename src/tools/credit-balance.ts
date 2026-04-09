@@ -7,13 +7,19 @@ export function registerCreditBalanceTool(server: McpServer, config: ServerConfi
 
   server.tool("credit_balance", "Check your Tavily API credit balance.", {}, async () => {
     try {
-      const balance = await client.getCreditBalance();
-      const percentUsed = balance.max_credits > 0 ? Math.round((balance.used_credits / balance.max_credits) * 100) : 0;
-      const text = [`Credit Balance: ${balance.available_credits} / ${balance.max_credits} (${percentUsed}% used)`];
-      if (balance.available_credits < 50) {
-        text.push("⚠ Credits running low. Consider topping up at https://tavily.com");
+      const usage = await client.getUsage();
+      const keyPercent = usage.key.limit > 0 ? Math.round((usage.key.usage / usage.key.limit) * 100) : 0;
+      const lines = [
+        `API Key: ${usage.key.usage} / ${usage.key.limit} credits used (${keyPercent}%)`,
+        `  search: ${usage.key.search_usage}, extract: ${usage.key.extract_usage}`,
+        `Account (${usage.account.current_plan}): ${usage.account.plan_usage} / ${usage.account.plan_limit}`,
+      ];
+
+      if (usage.key.limit - usage.key.usage < 50) {
+        lines.push("Credits running low. Consider topping up at https://tavily.com");
       }
-      return { content: [{ type: "text" as const, text: text.join("\n") }] };
+
+      return { content: [{ type: "text" as const, text: lines.join("\n") }] };
     } catch (error) {
       if (error instanceof TavilyError) {
         return {

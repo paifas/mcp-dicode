@@ -57,11 +57,29 @@ export interface TavilySearchParams {
   exclude_domains?: string[];
 }
 
-/** Credit balance from Tavily API */
-export interface TavilyCreditBalance {
-  available_credits: number;
-  max_credits: number;
-  used_credits: number;
+/** Usage response from Tavily API */
+export interface TavilyUsageResponse {
+  key: {
+    usage: number;
+    limit: number;
+    search_usage: number;
+    extract_usage: number;
+    crawl_usage: number;
+    map_usage: number;
+    research_usage: number;
+  };
+  account: {
+    current_plan: string;
+    plan_usage: number;
+    plan_limit: number;
+    paygo_usage: number;
+    paygo_limit: number;
+    search_usage: number;
+    extract_usage: number;
+    crawl_usage: number;
+    map_usage: number;
+    research_usage: number;
+  };
 }
 
 const MAX_RETRIES = 3;
@@ -157,12 +175,12 @@ export class TavilyClient {
     return this.request<TavilyExtractResponse>("/extract", params);
   }
 
-  async getCreditBalance(): Promise<TavilyCreditBalance> {
+  async getUsage(): Promise<TavilyUsageResponse> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeout);
 
     try {
-      const response = await fetch(`${this.baseUrl}/credit-balance`, {
+      const response = await fetch(`${this.baseUrl}/usage`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
@@ -172,16 +190,13 @@ export class TavilyClient {
 
       if (!response.ok) {
         const text = await response.text().catch(() => "");
-        throw new TavilyError(`Failed to fetch credit balance (${response.status}): ${text}`, response.status);
+        throw new TavilyError(`Failed to fetch usage (${response.status}): ${text}`, response.status);
       }
 
-      return (await response.json()) as TavilyCreditBalance;
+      return (await response.json()) as TavilyUsageResponse;
     } catch (error) {
       if (error instanceof TavilyError) throw error;
-      throw new TavilyError(
-        `Failed to fetch credit balance: ${error instanceof Error ? error.message : String(error)}`,
-        500,
-      );
+      throw new TavilyError(`Failed to fetch usage: ${error instanceof Error ? error.message : String(error)}`, 500);
     } finally {
       clearTimeout(timer);
     }
