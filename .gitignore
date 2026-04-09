@@ -2,6 +2,7 @@ node_modules/
 build/
 *.tsbuildinfo
 .env
+.npmrc
 CLAUDE.md
 .claude/
 todos.md

@@ -35,16 +35,11 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 Add to `~/.config/opencode/opencode.json` (global) or `.opencode.json` in your project root:
 
 ```jsonc
-{
-  "mcp": {
-    "mcp-dicode": {
-      "type": "local",
-      "command": ["npx", "-y", "mcp-dicode"],
-      "enabled": true,
-      "environment": {
-        "TAVILY_API_KEY": "your-api-key"
-      }
-    }
+"mcp-dicode": {
+  "type": "local",
+  "command": ["npx", "-y", "mcp-dicode"],
+  "environment": {
+    "TAVILY_API_KEY": "your-api-key"
   }
 }
 ```
@@ -77,6 +72,7 @@ Search the web using Tavily. Returns results with titles, URLs, and snippets.
 | `TAVILY_API_KEY` | Yes | — | Your Tavily API key. Get one at [tavily.com](https://tavily.com) |
 | `DICODE_MAX_RESULTS` | No | `5` | Default number of results |
 | `DICODE_SEARCH_DEPTH` | No | `basic` | Default search depth |
+| `DICODE_CACHE_TTL` | No | `3600` | Cache TTL in seconds (0 to disable) |
 
 ## Example Output
 

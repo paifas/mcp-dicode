@@ -3,6 +3,8 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerConfig } from "../config.js";
 import { TavilySearchProvider, TavilyError } from "../providers/tavily/tavily-search.js";
 import { formatSearchResponse } from "../utils/format.js";
+import { cacheKey, cacheGet, cacheSet } from "../utils/cache.js";
+import type { SearchResponse } from "../types.js";
 
 const webSearchSchema = {
   query: z.string().describe("The search query"),
@@ -37,7 +39,7 @@ export function registerWebSearchTool(server: McpServer, config: ServerConfig) {
     webSearchSchema,
     async (params) => {
       try {
-        const response = await provider.search({
+        const searchParams = {
           query: params.query,
           maxResults: params.maxResults ?? config.defaultMaxResults,
           searchDepth: params.searchDepth ?? config.defaultSearchDepth,
@@ -48,7 +50,17 @@ export function registerWebSearchTool(server: McpServer, config: ServerConfig) {
           includeDomains: params.includeDomains,
           excludeDomains: params.excludeDomains,
           includeAnswer: params.includeAnswer ?? true,
-        });
+        };
+
+        const key = cacheKey("search", searchParams);
+        const cached = cacheGet<SearchResponse>(key);
+        if (cached) {
+          const text = formatSearchResponse(cached);
+          return { content: [{ type: "text" as const, text }] };
+        }
+
+        const response = await provider.search(searchParams);
+        cacheSet(key, response, config.cacheTtl);
 
         const text = formatSearchResponse(response);
         return {

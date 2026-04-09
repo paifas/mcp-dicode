@@ -3,6 +3,8 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerConfig } from "../config.js";
 import { TavilySearchProvider, TavilyError } from "../providers/tavily/tavily-search.js";
 import { formatExtractResponse } from "../utils/format.js";
+import { cacheKey, cacheGet, cacheSet } from "../utils/cache.js";
+import type { ExtractResponse } from "../types.js";
 
 const webReaderSchema = {
   urls: z.array(z.string()).min(1).max(20).describe("URLs to extract content from (1-20)"),
@@ -24,11 +26,46 @@ export function registerWebReaderTool(server: McpServer, config: ServerConfig) {
     webReaderSchema,
     async (params) => {
       try {
-        const response = await provider.extract!({
+        // URL validation
+        for (const url of params.urls) {
+          if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            return {
+              content: [{ type: "text" as const, text: `Invalid URL: "${url}". Must start with http:// or https://.` }],
+              isError: true,
+            };
+          }
+          try {
+            new URL(url);
+          } catch {
+            return {
+              content: [{ type: "text" as const, text: `Invalid URL format: "${url}".` }],
+              isError: true,
+            };
+          }
+        }
+
+        // Cache lookup
+        const extractParams = {
           urls: params.urls,
           extractDepth: params.extractDepth,
           includeImages: params.includeImages,
-        });
+        };
+        const key = cacheKey("extract", extractParams);
+        const cached = cacheGet<ExtractResponse>(key);
+        if (cached) {
+          const text = formatExtractResponse(cached);
+          return { content: [{ type: "text" as const, text }] };
+        }
+
+        // Non-null assertion fix
+        if (!provider.extract) {
+          return {
+            content: [{ type: "text" as const, text: "Extract not supported by current provider." }],
+            isError: true,
+          };
+        }
+        const response = await provider.extract(extractParams);
+        cacheSet(key, response, config.cacheTtl);
 
         const text = formatExtractResponse(response);
         return {

@@ -17,6 +17,7 @@ export interface ServerConfig {
   tavilyApiKey: string;
   defaultMaxResults: number;
   defaultSearchDepth: "advanced" | "basic" | "fast" | "ultra-fast";
+  cacheTtl: number;
   serverName: string;
   serverVersion: string;
 }
@@ -39,10 +40,18 @@ export function loadConfig(): ServerConfig {
     | "fast"
     | "ultra-fast";
 
+  const cacheTtl = parseInt(process.env.DICODE_CACHE_TTL ?? "3600", 10);
+  if (Number.isNaN(cacheTtl) || cacheTtl < 0) {
+    throw new Error(
+      `Invalid DICODE_CACHE_TTL value: "${process.env.DICODE_CACHE_TTL}". Must be a non-negative integer (seconds).`,
+    );
+  }
+
   return {
     tavilyApiKey,
     defaultMaxResults,
     defaultSearchDepth,
+    cacheTtl,
     serverName: "mcp-dicode",
     serverVersion: getPackageVersion(),
   };
