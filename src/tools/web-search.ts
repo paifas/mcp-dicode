@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerConfig } from "../config.js";
 import { TavilySearchProvider, TavilyError } from "../providers/tavily/tavily-search.js";
+import { log } from "../providers/tavily/tavily-client.js";
 import { formatSearchResponse } from "../utils/format.js";
 import { cacheKey, cacheGet, cacheSet } from "../utils/cache.js";
 import type { SearchResponse } from "../types.js";
@@ -55,10 +56,12 @@ export function registerWebSearchTool(server: McpServer, config: ServerConfig) {
         const key = cacheKey("search", searchParams);
         const cached = cacheGet<SearchResponse>(key);
         if (cached) {
+          log("cache hit: search");
           const text = formatSearchResponse(cached);
           return { content: [{ type: "text" as const, text }] };
         }
 
+        log(`cache miss: search "${params.query}"`);
         const response = await provider.search(searchParams);
         cacheSet(key, response, config.cacheTtl);
 

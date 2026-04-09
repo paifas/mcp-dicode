@@ -65,6 +65,10 @@ Search the web using Tavily. Returns results with titles, URLs, and snippets.
 | `excludeDomains` | string[] | — | Exclude results from these domains |
 | `includeAnswer` | boolean | `true` | Include an AI-generated answer summary |
 
+### `credit_balance`
+
+Check your Tavily API credit balance and usage.
+
 ## Environment Variables
 
 | Variable | Required | Default | Description |
@@ -73,6 +77,7 @@ Search the web using Tavily. Returns results with titles, URLs, and snippets.
 | `DICODE_MAX_RESULTS` | No | `5` | Default number of results |
 | `DICODE_SEARCH_DEPTH` | No | `basic` | Default search depth |
 | `DICODE_CACHE_TTL` | No | `3600` | Cache TTL in seconds (0 to disable) |
+| `DICODE_DEBUG` | No | — | Set to any value to enable debug logging to stderr |
 
 ## Example Output
 

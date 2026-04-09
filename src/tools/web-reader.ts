@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerConfig } from "../config.js";
 import { TavilySearchProvider, TavilyError } from "../providers/tavily/tavily-search.js";
+import { log } from "../providers/tavily/tavily-client.js";
 import { formatExtractResponse } from "../utils/format.js";
 import { cacheKey, cacheGet, cacheSet } from "../utils/cache.js";
 import type { ExtractResponse } from "../types.js";
@@ -53,9 +54,12 @@ export function registerWebReaderTool(server: McpServer, config: ServerConfig) {
         const key = cacheKey("extract", extractParams);
         const cached = cacheGet<ExtractResponse>(key);
         if (cached) {
+          log("cache hit: extract");
           const text = formatExtractResponse(cached);
           return { content: [{ type: "text" as const, text }] };
         }
+
+        log(`cache miss: extract ${params.urls.length} url(s)`);
 
         // Non-null assertion fix
         if (!provider.extract) {

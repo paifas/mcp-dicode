@@ -57,6 +57,20 @@ export interface TavilySearchParams {
   exclude_domains?: string[];
 }
 
+/** Credit balance from Tavily API */
+export interface TavilyCreditBalance {
+  available_credits: number;
+  max_credits: number;
+  used_credits: number;
+}
+
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1000;
+
+function isRetryable(status: number): boolean {
+  return status === 429 || status >= 500;
+}
+
 /**
  * Low-level HTTP client for the Tavily Search API.
  */
@@ -70,91 +84,118 @@ export class TavilyClient {
     this.timeout = timeout;
   }
 
+  private async request<T>(endpoint: string, body: unknown): Promise<T> {
+    let lastError: TavilyError | undefined;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      if (attempt > 0) {
+        const delay = BASE_DELAY_MS * Math.pow(2, attempt - 1);
+        log(`retry ${attempt}/${MAX_RETRIES} after ${delay}ms`);
+        await sleep(delay);
+      }
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), this.timeout);
+
+      try {
+        const response = await fetch(`${this.baseUrl}${endpoint}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${this.apiKey}`,
+          },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const text = await response.text().catch(() => "");
+          const msg =
+            response.status === 401
+              ? `Invalid Tavily API key. ${text}`
+              : response.status === 429
+                ? `Tavily API rate limit exceeded. You may have used your monthly quota. ${text}`
+                : `Tavily API error (${response.status}): ${text}`;
+
+          lastError = new TavilyError(msg, response.status);
+
+          if (isRetryable(response.status) && attempt < MAX_RETRIES) {
+            continue;
+          }
+          throw lastError;
+        }
+
+        return (await response.json()) as T;
+      } catch (error) {
+        if (error instanceof TavilyError) {
+          if (isRetryable(error.status) && attempt < MAX_RETRIES) {
+            lastError = error;
+            continue;
+          }
+          throw error;
+        }
+        if (error instanceof Error && error.name === "AbortError") {
+          throw new TavilyError("Tavily API request timed out", 408);
+        }
+        throw new TavilyError(
+          `Tavily API request failed: ${error instanceof Error ? error.message : String(error)}`,
+          500,
+        );
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    throw lastError;
+  }
+
   async search(params: TavilySearchParams): Promise<TavilySearchResponse> {
+    return this.request<TavilySearchResponse>("/search", params);
+  }
+
+  async extract(params: TavilyExtractParams): Promise<TavilyExtractResponse> {
+    return this.request<TavilyExtractResponse>("/extract", params);
+  }
+
+  async getCreditBalance(): Promise<TavilyCreditBalance> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeout);
 
     try {
-      const response = await fetch(`${this.baseUrl}/search`, {
-        method: "POST",
+      const response = await fetch(`${this.baseUrl}/credit-balance`, {
+        method: "GET",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${this.apiKey}`,
         },
-        body: JSON.stringify(params),
         signal: controller.signal,
       });
 
       if (!response.ok) {
-        const body = await response.text().catch(() => "");
-        if (response.status === 401) {
-          throw new TavilyError(`Invalid Tavily API key. ${body}`, response.status);
-        }
-        if (response.status === 429) {
-          throw new TavilyError(
-            `Tavily API rate limit exceeded. You may have used your monthly quota. ${body}`,
-            response.status,
-          );
-        }
-        throw new TavilyError(`Tavily API error (${response.status}): ${body}`, response.status);
+        const text = await response.text().catch(() => "");
+        throw new TavilyError(`Failed to fetch credit balance (${response.status}): ${text}`, response.status);
       }
 
-      return (await response.json()) as TavilySearchResponse;
+      return (await response.json()) as TavilyCreditBalance;
     } catch (error) {
       if (error instanceof TavilyError) throw error;
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new TavilyError("Tavily API request timed out", 408);
-      }
       throw new TavilyError(
-        `Tavily API request failed: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to fetch credit balance: ${error instanceof Error ? error.message : String(error)}`,
         500,
       );
     } finally {
       clearTimeout(timer);
     }
   }
+}
 
-  async extract(params: TavilyExtractParams): Promise<TavilyExtractResponse> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeout);
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-    try {
-      const response = await fetch(`${this.baseUrl}/extract`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify(params),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        const body = await response.text().catch(() => "");
-        if (response.status === 401) {
-          throw new TavilyError(`Invalid Tavily API key. ${body}`, response.status);
-        }
-        if (response.status === 429) {
-          throw new TavilyError(
-            `Tavily API rate limit exceeded. You may have used your monthly quota. ${body}`,
-            response.status,
-          );
-        }
-        throw new TavilyError(`Tavily API error (${response.status}): ${body}`, response.status);
-      }
-
-      return (await response.json()) as TavilyExtractResponse;
-    } catch (error) {
-      if (error instanceof TavilyError) throw error;
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new TavilyError("Tavily API request timed out", 408);
-      }
-      throw new TavilyError(
-        `Tavily API request failed: ${error instanceof Error ? error.message : String(error)}`,
-        500,
-      );
-    } finally {
-      clearTimeout(timer);
-    }
+/** Debug logger -- outputs to stderr when DICODE_DEBUG is set */
+export function log(message: string): void {
+  if (process.env.DICODE_DEBUG) {
+    const ts = new Date().toISOString().slice(11, 19);
+    process.stderr.write(`[dicode ${ts}] ${message}\n`);
   }
 }
