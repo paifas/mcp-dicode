@@ -2,3 +2,6 @@ node_modules/
 build/
 *.tsbuildinfo
 .env
+CLAUDE.md
+.claude/
+todos.md

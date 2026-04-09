@@ -6,26 +6,13 @@ import { formatSearchResponse } from "../utils/format.js";
 
 const webSearchSchema = {
   query: z.string().describe("The search query"),
-  maxResults: z
-    .number()
-    .min(1)
-    .max(20)
-    .optional()
-    .describe("Maximum number of results (default: 5)"),
+  maxResults: z.number().min(1).max(20).optional().describe("Maximum number of results (default: 5)"),
   searchDepth: z
     .enum(["advanced", "basic", "fast", "ultra-fast"])
     .optional()
-    .describe(
-      "Search depth: basic/fast/ultra-fast (1 credit) or advanced (2 credits)",
-    ),
-  topic: z
-    .enum(["general", "news", "finance"])
-    .optional()
-    .describe("Search topic category"),
-  timeRange: z
-    .enum(["day", "week", "month", "year"])
-    .optional()
-    .describe("Time range filter for results"),
+    .describe("Search depth: basic/fast/ultra-fast (1 credit) or advanced (2 credits)"),
+  topic: z.enum(["general", "news", "finance"]).optional().describe("Search topic category"),
+  timeRange: z.enum(["day", "week", "month", "year"]).optional().describe("Time range filter for results"),
   startDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
@@ -36,18 +23,9 @@ const webSearchSchema = {
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
     .optional()
     .describe("End date filter (YYYY-MM-DD)"),
-  includeDomains: z
-    .array(z.string())
-    .optional()
-    .describe("Only include results from these domains"),
-  excludeDomains: z
-    .array(z.string())
-    .optional()
-    .describe("Exclude results from these domains"),
-  includeAnswer: z
-    .boolean()
-    .optional()
-    .describe("Include an AI-generated answer (default: true)"),
+  includeDomains: z.array(z.string()).optional().describe("Only include results from these domains"),
+  excludeDomains: z.array(z.string()).optional().describe("Exclude results from these domains"),
+  includeAnswer: z.boolean().optional().describe("Include an AI-generated answer (default: true)"),
 };
 
 export function registerWebSearchTool(server: McpServer, config: ServerConfig) {

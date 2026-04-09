@@ -5,21 +5,14 @@ import { TavilySearchProvider, TavilyError } from "../providers/tavily/tavily-se
 import { formatExtractResponse } from "../utils/format.js";
 
 const webReaderSchema = {
-  urls: z
-    .array(z.string())
-    .min(1)
-    .max(20)
-    .describe("URLs to extract content from (1-20)"),
+  urls: z.array(z.string()).min(1).max(20).describe("URLs to extract content from (1-20)"),
   extractDepth: z
     .enum(["basic", "advanced"])
     .optional()
     .describe(
-      "Extraction depth: basic (1 credit per 5 URLs) or advanced (2 credits per 5 URLs, includes tables and embedded content)",
+      "Extraction depth: basic (1 credit per 5 URLs, returns raw page HTML as markdown including navigation and boilerplate) or advanced (2 credits per 5 URLs, extracts clean article content with navigation/ads/sidebar/footer stripped)",
     ),
-  includeImages: z
-    .boolean()
-    .optional()
-    .describe("Include extracted image URLs (default: false)"),
+  includeImages: z.boolean().optional().describe("Include extracted image URLs (default: false)"),
 };
 
 export function registerWebReaderTool(server: McpServer, config: ServerConfig) {

@@ -88,10 +88,7 @@ export class TavilyClient {
       if (!response.ok) {
         const body = await response.text().catch(() => "");
         if (response.status === 401) {
-          throw new TavilyError(
-            `Invalid Tavily API key. ${body}`,
-            response.status,
-          );
+          throw new TavilyError(`Invalid Tavily API key. ${body}`, response.status);
         }
         if (response.status === 429) {
           throw new TavilyError(
@@ -99,10 +96,7 @@ export class TavilyClient {
             response.status,
           );
         }
-        throw new TavilyError(
-          `Tavily API error (${response.status}): ${body}`,
-          response.status,
-        );
+        throw new TavilyError(`Tavily API error (${response.status}): ${body}`, response.status);
       }
 
       return (await response.json()) as TavilySearchResponse;
@@ -138,10 +132,7 @@ export class TavilyClient {
       if (!response.ok) {
         const body = await response.text().catch(() => "");
         if (response.status === 401) {
-          throw new TavilyError(
-            `Invalid Tavily API key. ${body}`,
-            response.status,
-          );
+          throw new TavilyError(`Invalid Tavily API key. ${body}`, response.status);
         }
         if (response.status === 429) {
           throw new TavilyError(
@@ -149,10 +140,7 @@ export class TavilyClient {
             response.status,
           );
         }
-        throw new TavilyError(
-          `Tavily API error (${response.status}): ${body}`,
-          response.status,
-        );
+        throw new TavilyError(`Tavily API error (${response.status}): ${body}`, response.status);
       }
 
       return (await response.json()) as TavilyExtractResponse;
